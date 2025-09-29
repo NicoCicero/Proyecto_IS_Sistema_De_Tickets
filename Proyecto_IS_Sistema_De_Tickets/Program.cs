@@ -17,6 +17,8 @@ namespace Proyecto_IS_Sistema_De_Tickets
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new FormLogin());
+
+
         }
     }
 }

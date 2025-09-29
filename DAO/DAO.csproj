@@ -41,9 +41,18 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AuditoriaRepository.cs" />
     <Compile Include="DAL.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SesionRepository.cs" />
     <Compile Include="UserLoginDAL.cs" />
+    <Compile Include="UsuarioRepository.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\BE\BE.csproj">
+      <Project>{839d7497-be22-476e-85c1-ed7cb13647ff}</Project>
+      <Name>BE</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

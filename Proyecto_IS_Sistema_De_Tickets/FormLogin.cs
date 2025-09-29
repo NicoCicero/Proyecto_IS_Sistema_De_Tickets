@@ -36,7 +36,7 @@ namespace Proyecto_IS_Sistema_De_Tickets
 
         private void Form1_Load(object sender, EventArgs e)
         {
-
+            
         }
 
         private void txt_Usuario_Enter(object sender, EventArgs e)
@@ -85,33 +85,24 @@ namespace Proyecto_IS_Sistema_De_Tickets
         #endregion
         private void btn_Acceder_Click(object sender, EventArgs e)
         {
-            if (txt_Usuario.Text != "USUARIO")
+            var ok = AuthService.Instancia.Login(
+            txt_Usuario.Text.Trim(),
+            txt_Contraseña.Text,
+            ip: null,
+            userAgent: Application.ProductName);
+
+            if (ok)
             {
-                if (txt_Contraseña.Text != "CONTRASEÑA")
-                {
-                    UserLoginBL user = new UserLoginBL();
-                    var validLogin = user.LoginUser(txt_Usuario.Text, txt_Contraseña.Text);
-                    if (validLogin)
-                    {
-                        this.Hide();
-                        FormPrueba main = new FormPrueba();
-                        main.Show();
-                    }
-                    else
-                    {
-                        MsgError("Usuario o Contraseña incorrecta");
-                        txt_Contraseña.Clear();
-                        txt_Usuario.Focus();
-                    }
-                }
-                else
-                {
-                    MsgError("Por favor ingrese una contraseña");
-                }
+                this.Hide();
+                var main = new FormPrueba();
+                main.FormClosed += (_, __) => Application.Exit();  // cierra todo al cerrar el main
+                main.Show();
             }
             else
             {
-                MsgError("Por favor ingrese un usuario");
+                MsgError("Usuario o contraseña incorrecta o cuenta bloqueada");
+                txt_Contraseña.Clear();
+                txt_Usuario.Focus();
             }
         }
         private void MsgError(string msg)

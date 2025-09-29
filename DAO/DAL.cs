@@ -14,7 +14,7 @@ namespace DAO
         
         public DAL()
         {
-            mConn = "Data Source=localhost;Initial Catalog=Sistema_De_Tickets;User ID=dev_user;Password=dev_user;TrustServerCertificate=True;";
+            mConn = "Data Source=localhost;Initial Catalog=BDSistemaDeTickets;Integrated Security=True";
         }
 
         protected SqlConnection GetConnection()
