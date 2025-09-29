@@ -104,6 +104,10 @@
       <Project>{de7763f4-a2c7-4eb1-b151-17f5e39a2402}</Project>
       <Name>BL</Name>
     </ProjectReference>
+    <ProjectReference Include="..\DAO\DAO.csproj">
+      <Project>{d17fa4f9-5779-42dd-9cc3-bfeb8b8c0c8b}</Project>
+      <Name>DAO</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

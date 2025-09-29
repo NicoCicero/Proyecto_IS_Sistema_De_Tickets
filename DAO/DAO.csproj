@@ -46,6 +46,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SesionRepository.cs" />
     <Compile Include="UserLoginDAL.cs" />
+    <Compile Include="UsuarioAdminRepository.cs" />
     <Compile Include="UsuarioRepository.cs" />
   </ItemGroup>
   <ItemGroup>
