@@ -20,6 +20,7 @@ namespace DAO
         protected SqlConnection GetConnection()
         {
             return new SqlConnection(mConn);
+
         }
 
     }
