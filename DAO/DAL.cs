@@ -14,7 +14,7 @@ namespace DAO
         
         public DAL()
         {
-            mConn = "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=BDSistemaDeTickets;Integrated Security=True";
+            mConn = "Data Source=localhost;Initial Catalog=BDSistemaDeTickets;Integrated Security=True";
         }
 
         protected SqlConnection GetConnection()

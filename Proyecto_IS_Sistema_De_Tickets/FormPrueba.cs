@@ -1,15 +1,16 @@
-﻿using BL;
+﻿using BE;
+using BL;
+using DAO;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using BE;
-using DAO;
 
 namespace Proyecto_IS_Sistema_De_Tickets
 {
@@ -103,7 +104,7 @@ namespace Proyecto_IS_Sistema_De_Tickets
             btnGuardar.Visible = v;   // ← este es el “Guardar” que se ve en tu captura
             btnCancelar.Visible = v;
         }
-    
+
         private void CargarRolesDesdeBD()
         {
             try
@@ -223,22 +224,30 @@ namespace Proyecto_IS_Sistema_De_Tickets
                     }
                     break;
                 case 2:
-                    if(BL.SessionManager.Instancia.TieneRol("Administrador"))
+                    if (!BL.SessionManager.Instancia.TieneRol("Administrador"))
                     {
-                        MessageBox.Show("Solo un Administrador puede registrar usuarios.");
-                        // Volvemos a la pestaña anterior
+                        MessageBox.Show("Solo un Administrador puede ver la Bitácora.");
                         tabGeneral.SelectedIndex = 0;
                         return;
                     }
-                    _registroVisible = true;
-                    SetRegistrarVisible(true);
 
-                    ResetRegistrarForm();
-                    if (!_regRolesCargados)
-                    {
-                        CargarRolesDesdeBD();   // ahora trae de la BD
-                        _regRolesCargados = true;
-                    }
+                    CargarEventosBitacoraHardcoded();
+
+                    // defaults de fechas (sin “limitar”)
+                    dtpDesde.Value = new DateTime(2000, 1, 1);
+                    dtpHasta.Value = DateTime.Today.AddDays(1);
+
+                    // carga inicial (sin filtros de texto)
+                    var repoInit = new AuditoriaRepository();
+                    dgvBitacora.AutoGenerateColumns = true;
+                    dgvBitacora.DataSource = repoInit.FiltrarAuditoria(
+                        id: null,
+                        usuarioId: null,
+                        evento: null,
+                        texto: null,
+                        desdeUtc: DateTime.SpecifyKind(dtpDesde.Value.Date, DateTimeKind.Local).ToUniversalTime(),
+                        hastaUtcExcl: DateTime.SpecifyKind(dtpHasta.Value.Date.AddDays(1), DateTimeKind.Local).ToUniversalTime()
+                    );
 
                     break;
             }
@@ -251,35 +260,19 @@ namespace Proyecto_IS_Sistema_De_Tickets
 
         private void btnFiltrarBitacora_Click(object sender, EventArgs e)
         {
-            int? id = null;
-            int? usuarioId = null;
-            string evento = null;
-            string texto = null;
-            DateTime? desdeUtc = null;
-            DateTime? hastaUtcExcl = null;
+            int? id = int.TryParse(txtAuditoriaId.Text, out var vId) ? vId : (int?)null;
+            int? usuarioId = int.TryParse(txtId.Text, out var vUid) ? vUid : (int?)null;
 
-            // Cada filtro se activa solo si el checkbox está tildado
+            string evento = string.IsNullOrWhiteSpace(cmbEvento.Text)
+                ? null
+                : cmbEvento.Text.Trim().ToUpperInvariant();
 
-            if (chkId.Checked && int.TryParse(txtId.Text, out var vId))
-                id = vId;
+            string texto = string.IsNullOrWhiteSpace(txtTexto.Text)
+                ? null
+                : txtTexto.Text.Trim();
 
-            if (chkId.Checked && int.TryParse(txtId.Text, out var vUid))
-                usuarioId = vUid;
-
-            if (chkEvento.Checked && !string.IsNullOrWhiteSpace(cmbEvento.Text))
-                evento = cmbEvento.Text.Trim().ToUpperInvariant();
-
-            if (chkTexto.Checked && !string.IsNullOrWhiteSpace(txtTexto.Text))
-                texto = txtTexto.Text.Trim();
-
-            if (chkFecha.Checked)
-            {
-                // si usás DatePicker solo fecha:
-                var desdeLocal = dtpDesde.Value.Date;                 // 00:00 local
-                var hastaLocalExcl = dtpHasta.Value.Date.AddDays(1);  // exclusivo
-                desdeUtc = DateTime.SpecifyKind(desdeLocal, DateTimeKind.Local).ToUniversalTime();
-                hastaUtcExcl = DateTime.SpecifyKind(hastaLocalExcl, DateTimeKind.Local).ToUniversalTime();
-            }
+            var desdeUtc = DateTime.SpecifyKind(dtpDesde.Value.Date, DateTimeKind.Local).ToUniversalTime();
+            var hastaUtcExcl = DateTime.SpecifyKind(dtpHasta.Value.Date.AddDays(1), DateTimeKind.Local).ToUniversalTime();
 
             var repo = new AuditoriaRepository();
             var datos = repo.FiltrarAuditoria(id, usuarioId, evento, texto, desdeUtc, hastaUtcExcl);
@@ -287,16 +280,55 @@ namespace Proyecto_IS_Sistema_De_Tickets
             dgvBitacora.AutoGenerateColumns = true;
             dgvBitacora.DataSource = datos;
 
-            // toques de formato (opcional)
             if (dgvBitacora.Columns["FechaUtc"] != null)
-            {
-                dgvBitacora.Columns["FechaUtc"].HeaderText = "Fecha (UTC)";
                 dgvBitacora.Columns["FechaUtc"].DefaultCellStyle.Format = "yyyy-MM-dd HH:mm:ss";
-            }
             if (dgvBitacora.Columns["Detalle"] != null)
                 dgvBitacora.Columns["Detalle"].AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
         }
+
+        private void btnLimpiar_Click(object sender, EventArgs e)
+        {
+            txtAuditoriaId.Clear();
+            txtId.Clear();
+            cmbEvento.SelectedIndex = -1; // vacío
+            txtTexto.Clear();
+            dtpDesde.Value = new DateTime(2000, 1, 1);
+            dtpHasta.Value = DateTime.Today.AddDays(1);
+
+            // defaults de fechas (sin “limitar”)
+            dtpDesde.Value = new DateTime(2000, 1, 1);
+            dtpHasta.Value = DateTime.Today.AddDays(1);
+
+            // carga inicial (sin filtros de texto)
+            var repoInit = new AuditoriaRepository();
+            dgvBitacora.AutoGenerateColumns = true;
+            dgvBitacora.DataSource = repoInit.FiltrarAuditoria(
+                id: null,
+                usuarioId: null,
+                evento: null,
+                texto: null,
+                desdeUtc: DateTime.SpecifyKind(dtpDesde.Value.Date, DateTimeKind.Local).ToUniversalTime(),
+                hastaUtcExcl: DateTime.SpecifyKind(dtpHasta.Value.Date.AddDays(1), DateTimeKind.Local).ToUniversalTime()
+            );
+
+        }
+        private bool _eventosCargados = false;
+
+        private void CargarEventosBitacoraHardcoded()
+        {
+            if (_eventosCargados) return;
+
+            cmbEvento.Items.Clear();
+            cmbEvento.Items.Add(""); // = “Todos”
+            cmbEvento.Items.AddRange(new object[] {
+        "APP_START","APP_EXIT","LOGIN_OK","LOGIN_FAIL","LOGIN_BLOQUEADO",
+        "LOGOUT","PERMISO_DENEGADO","CAMBIO_PASSWORD",
+        "ALTA_USUARIO","BAJA_USUARIO","MODIFICACION_USUARIO"
+    });
+            cmbEvento.SelectedIndex = 0;
+            _eventosCargados = true;
+        }
     }
-    }
+}
 
 
