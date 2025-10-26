@@ -9,13 +9,14 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using BE;
+using DAO;
 
 namespace Proyecto_IS_Sistema_De_Tickets
 {
     public partial class FormPrueba : Form
     {
         private bool _registroVisible = false;   // estado del bloque de registro
-        private bool _regRolesCargados = false;  // ya lo tenés: lo dejamos
+        private bool _regRolesCargados = false;  // ya lo tenés: lo dejamos 
         public FormPrueba()
         {
             InitializeComponent();
@@ -35,7 +36,6 @@ namespace Proyecto_IS_Sistema_De_Tickets
             bool esAdmin = SessionManager.Instancia.TieneRol("Administrador");
             var roles = string.Join(", ", SessionManager.Instancia.UsuarioActual.Roles.Select(r => r.Nombre));
             this.Text = $"FormPrueba - {SessionManager.Instancia.UsuarioActual.Email} [{roles}]";
-            btnRegistrar.Visible = esAdmin;
 
             // Ocultar bloque de registro al iniciar
             SetRegistrarVisible(false);
@@ -103,33 +103,7 @@ namespace Proyecto_IS_Sistema_De_Tickets
             btnGuardar.Visible = v;   // ← este es el “Guardar” que se ve en tu captura
             btnCancelar.Visible = v;
         }
-
-
-        private void btnRegistrar_Click(object sender, EventArgs e)
-        {
-            if (!BL.SessionManager.Instancia.TieneRol("Administrador"))
-            {
-                MessageBox.Show("Solo un Administrador puede registrar usuarios.");
-                return;
-            }
-
-            _registroVisible = !_registroVisible;
-            SetRegistrarVisible(_registroVisible);
-
-            if (_registroVisible)
-            {
-                ResetRegistrarForm();
-                if (_registroVisible)
-                {
-                    ResetRegistrarForm();
-                    if (!_regRolesCargados)
-                    {
-                        CargarRolesDesdeBD();   // 👈 ahora trae de la BD
-                        _regRolesCargados = true;
-                    }
-                }
-            }
-        }
+    
         private void CargarRolesDesdeBD()
         {
             try
@@ -220,6 +194,109 @@ namespace Proyecto_IS_Sistema_De_Tickets
                 MessageBox.Show("Error al guardar: " + ex.Message);
             }
         }
+
+        private void TabGeneral_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            switch (tabGeneral.SelectedIndex)
+            {
+                case 0: // Primera pestaña "Menu Principal"
+                        // Lógica para la primera tab
+                    MessageBox.Show("Estás en Menu Principal");
+                    break;
+                case 1:
+                    if (!BL.SessionManager.Instancia.TieneRol("Administrador"))
+                    {
+                        MessageBox.Show("Solo un Administrador puede registrar usuarios.");
+                        // Volvemos a la pestaña anterior
+                        tabGeneral.SelectedIndex = 0;
+                        return;
+                    }
+
+                    _registroVisible = true;
+                    SetRegistrarVisible(true);
+
+                    ResetRegistrarForm();
+                    if (!_regRolesCargados)
+                    {
+                        CargarRolesDesdeBD();   // ahora trae de la BD
+                        _regRolesCargados = true;
+                    }
+                    break;
+                case 2:
+                    if(BL.SessionManager.Instancia.TieneRol("Administrador"))
+                    {
+                        MessageBox.Show("Solo un Administrador puede registrar usuarios.");
+                        // Volvemos a la pestaña anterior
+                        tabGeneral.SelectedIndex = 0;
+                        return;
+                    }
+                    _registroVisible = true;
+                    SetRegistrarVisible(true);
+
+                    ResetRegistrarForm();
+                    if (!_regRolesCargados)
+                    {
+                        CargarRolesDesdeBD();   // ahora trae de la BD
+                        _regRolesCargados = true;
+                    }
+
+                    break;
+            }
+        }
+
+        private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+
+        }
+
+        private void btnFiltrarBitacora_Click(object sender, EventArgs e)
+        {
+            int? id = null;
+            int? usuarioId = null;
+            string evento = null;
+            string texto = null;
+            DateTime? desdeUtc = null;
+            DateTime? hastaUtcExcl = null;
+
+            // Cada filtro se activa solo si el checkbox está tildado
+
+            if (chkId.Checked && int.TryParse(txtId.Text, out var vId))
+                id = vId;
+
+            if (chkId.Checked && int.TryParse(txtId.Text, out var vUid))
+                usuarioId = vUid;
+
+            if (chkEvento.Checked && !string.IsNullOrWhiteSpace(cmbEvento.Text))
+                evento = cmbEvento.Text.Trim().ToUpperInvariant();
+
+            if (chkTexto.Checked && !string.IsNullOrWhiteSpace(txtTexto.Text))
+                texto = txtTexto.Text.Trim();
+
+            if (chkFecha.Checked)
+            {
+                // si usás DatePicker solo fecha:
+                var desdeLocal = dtpDesde.Value.Date;                 // 00:00 local
+                var hastaLocalExcl = dtpHasta.Value.Date.AddDays(1);  // exclusivo
+                desdeUtc = DateTime.SpecifyKind(desdeLocal, DateTimeKind.Local).ToUniversalTime();
+                hastaUtcExcl = DateTime.SpecifyKind(hastaLocalExcl, DateTimeKind.Local).ToUniversalTime();
+            }
+
+            var repo = new AuditoriaRepository();
+            var datos = repo.FiltrarAuditoria(id, usuarioId, evento, texto, desdeUtc, hastaUtcExcl);
+
+            dgvBitacora.AutoGenerateColumns = true;
+            dgvBitacora.DataSource = datos;
+
+            // toques de formato (opcional)
+            if (dgvBitacora.Columns["FechaUtc"] != null)
+            {
+                dgvBitacora.Columns["FechaUtc"].HeaderText = "Fecha (UTC)";
+                dgvBitacora.Columns["FechaUtc"].DefaultCellStyle.Format = "yyyy-MM-dd HH:mm:ss";
+            }
+            if (dgvBitacora.Columns["Detalle"] != null)
+                dgvBitacora.Columns["Detalle"].AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
+        }
     }
-}
+    }
+
 
