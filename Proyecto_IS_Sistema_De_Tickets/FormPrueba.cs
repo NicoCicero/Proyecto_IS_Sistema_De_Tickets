@@ -16,7 +16,7 @@ namespace Proyecto_IS_Sistema_De_Tickets
     public partial class FormPrueba : Form
     {
         private bool _registroVisible = false;   // estado del bloque de registro
-        private bool _regRolesCargados = false;  // ya lo tenés: lo dejamos
+        private bool _regRolesCargados = false;  // ya lo tenés: lo dejamos 
         public FormPrueba()
         {
             InitializeComponent();
