@@ -36,7 +36,8 @@ namespace Proyecto_IS_Sistema_De_Tickets
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            
+            string sql = AdminSeedHelper.BuildUpdateAdminSql("admin@sistema.com", "Admin123!");
+            Console.WriteLine(sql);
         }
 
         private void txt_Usuario_Enter(object sender, EventArgs e)
